@@ -1,27 +1,52 @@
 mod patch;
 mod utils;
 
-use crate::utils::{get_or_pick_file, get_or_pick_folder};
+use crate::utils::{get_or_pick_file, get_or_pick_folder, get_or_save_file};
 use clap::Parser;
-use std::path::PathBuf;
+use crate::patch::{PatchSet, ZipPatcher};
 
 #[derive(Parser)]
 struct Args {
     /// Target file to patch
     #[arg(short, long)]
-    input_file: Option<String>,
-    input_patches_folder: Option<String>,
+    file: Option<String>,
+    #[arg(short, long)]
+    patches: Option<String>,
+
     /// Target destination to save
     #[arg(short, long)]
     output_file: Option<String>,
 }
 
-fn main() {
+fn main() -> std::io::Result<()> {
     let args = Args::parse();
-    let input_file = get_or_pick_file(&args.input_file)
+    let input_file = get_or_pick_file(&args.file)
         .expect("Select a shader pack file or pass the path through the command line args!");
-    let input_patches_folder = get_or_pick_folder(&args.input_patches_folder)
+    let input_patches_folder = get_or_pick_folder(&args.patches)
         .expect("Select a folder containing patch files or pass through the command line args!");
-    let output_file = get_or_pick_file(&args.output_file)
+    let output_file = get_or_save_file(&args.output_file)
         .expect("Select an output file or pass the path through the command line args!");
+
+    let mut patcher = ZipPatcher::from(&input_file)?;
+    let patches = PatchSet::from(&input_patches_folder)?;
+    patcher.apply_patches(&patches)?;
+
+    let file = std::fs::File::create(output_file)?;
+    let zip = patcher.save(file)?;
+    zip.finish()?;
+    println!("Success");
+    Ok(())
+
+}
+
+
+
+#[cfg(test)]
+mod tests{
+
+
+    #[test]
+    fn test(){
+
+    }
 }
