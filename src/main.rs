@@ -1,9 +1,9 @@
 mod patch;
 mod utils;
 
+use crate::patch::{PatchSet, ZipPatcher};
 use crate::utils::{get_or_pick_file, get_or_pick_folder, get_or_save_file};
 use clap::Parser;
-use crate::patch::{PatchSet, ZipPatcher};
 
 #[derive(Parser)]
 struct Args {
@@ -12,7 +12,6 @@ struct Args {
     file: Option<String>,
     #[arg(short, long)]
     patches: Option<String>,
-
     /// Target destination to save
     #[arg(short, long)]
     output_file: Option<String>,
@@ -31,22 +30,9 @@ fn main() -> std::io::Result<()> {
     let patches = PatchSet::from(&input_patches_folder)?;
     patcher.apply_patches(&patches)?;
 
-    let file = std::fs::File::create(output_file)?;
+    let file = std::fs::File::create(&output_file)?;
     let zip = patcher.save(file)?;
     zip.finish()?;
-    println!("Success");
+    println!("Output file written to: {:?}", &output_file);
     Ok(())
-
-}
-
-
-
-#[cfg(test)]
-mod tests{
-
-
-    #[test]
-    fn test(){
-
-    }
 }
